@@ -1,0 +1,26 @@
+table.data-heatmap {
+	table-layout: fixed;
+	border-collapse: initial;
+	border-spacing: 0;
+	white-space:  nowrap;
+	font-style: italic;
+	margin: 0;
+	padding: 0;
+}
+td.data-heatmap-xindex, td.data-heatmap-yindex {
+	padding: 0;
+	margin: 0;
+	text-align: right;
+}
+
+div#data-heatmap-hover {
+
+	background-color: #ffffff;
+	padding: 0.5em;
+	font-size: 1em;
+	z-index: 999;
+	position: fixed;
+	display: block;
+	float: left;
+	margin: 0;
+}
