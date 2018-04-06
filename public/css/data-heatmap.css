@@ -19,7 +19,7 @@ div#data-heatmap-hover {
 	padding: 0.5em;
 	font-size: 1em;
 	z-index: 999;
-	position: fixed;
+	position: absolute;
 	display: block;
 	float: left;
 	margin: 0;
