@@ -5,7 +5,9 @@
 {
 	private $xAxis = [];
 	private $yAxis = [];
-	private $maxValue = 0;
+	private $maxValue = NULL;
+	private $minValue = NULL;
+	private $maxMinSpan = NULL;
 	private $pluginName = 'data-heatmap';
 	private $version = '1.0.0';
 
@@ -26,11 +28,14 @@
 
 	private function getParams($userParams) {
 
+	
 		$this->params = shortcode_atts( array(
 			'source' => 'custom-field', // TODO: add as source: SQL-query, file from media library
 			'id' => 'data-heatmap',
 			'source-id' => 'data-heatmap',
+			'source-for-gradiation' => 'all',
 			'basecolor' => '#ff0000',
+			'calculation-method' => 'relative',
 			'fontSize' => 8,
 			'hide-values' => 'no',
 			'hide-xaxis' => 'no',
@@ -70,7 +75,11 @@
 		$header = [];
 		$preparedData = [];
 		
-		$this->maxValue = 0;
+		$this->maxValue = NULL;
+		$this->minValue = NULL;
+		$this->maxMinSpan = NULL;
+		$this->yAxis =[];
+		$this->xAxis = [];
 		
 		foreach ($data as $index => $row) {
 
@@ -93,13 +102,15 @@
 					$yIndex = trim($fields[(string) $header['x']]);
 
 				}
-				$value = trim($fields[(string) $header['v']]);
+				
 
 				if (!in_array($xIndex, $this->xAxis)) {
 
 					$this->xAxis[] = $xIndex;
 
 				}
+				
+				$value = trim($fields[(string) $header['v']]);
 
 				if (!array_key_exists($yIndex, $this->yAxis)) {
 
@@ -111,11 +122,34 @@
 
 				}
 
-				if ($value > $this->maxValue) {$this->maxValue = $value;}
+			
+				if ($this->params["source-for-gradiation"] == "all") {
+					
+					if ($value > $this->maxValue) {$this->maxValue = $value;}
+					if ($value < $this->minValue OR $this->minValue == NULL) {$this->minValue = $value;}
+					$this->maxMinSpan = $this->maxValue - $this->minValue;
+				
+				} else {
+					
+					if ($this->params["source-for-gradiation"] == "x") {
+						
+						$index = $xIndex;
+						
+					} else if ($this->params["source-for-gradiation"] == "y") {
+						
+						$index = $yIndex;
+					}
+								
+					if ($value > $this->maxValue[$index]) {$this->maxValue[$index] = (double) $value;}
+					if ($value < $this->minValue[$index]  OR $this->minValue[$index] == NULL) {$this->minValue[$index] = (double) $value;}
+					$this->maxMinSpan[$index] = $this->maxValue[$index] - $this->minValue[$index];
+
+				}
 
 				$preparedData[$yIndex][$xIndex] = $value;
 
 			}
+
 
 		}
 
@@ -162,14 +196,23 @@
 				if (array_key_exists($yIndex, $preparedData) AND array_key_exists($xIndex, $preparedData[$yIndex])) {
 
 					$value = $preparedData[$yIndex][$xIndex];
+					
+					if ($this->params["source-for-gradiation"] == "x") {
+						
+						$index = $xIndex;
+						
+					} else if ($this->params["source-for-gradiation"] == "y") {
+						
+						$index = $yIndex;
+					}
 
 					if ($this->params['hide-values'] == 'yes') {
 
-						$result .= '<td class="data-heatmap-cell" value="'.$value.'" style="background-color: rgba('.$this->getColor($value).');"></td>';
+						$result .= '<td class="data-heatmap-cell" value="'.$value.'" style="background-color: rgba('.$this->getColor($value, $index).');"></td>';
 
 					} else {
 
-						$result .= '<td style="background-color: rgba('.$this->getColor($value).');">'.$value.'</td>';
+						$result .= '<td style="background-color: rgba('.$this->getColor($value, $index).');">'.$value.'</td>';
 
 					}
 
@@ -191,12 +234,36 @@
 
 	}
 
-	private function getColor($value) {
+	private function getColor($value, $index = NULL) {
 
 		list($r, $g, $b) = sscanf($this->params['basecolor'], "#%02x%02x%02x");
-
-		$a = round($value / $this->maxValue, 2);
-
+				
+		if ($index == NULL) {
+			
+			$maxValue = $this->maxValue;
+			$minValue = $this->minValue;
+			$maxMinSpan = $this->maxMinSpan;
+		
+		} else {
+		
+			$maxValue = $this->maxValue[$index];
+			$minValue = $this->minValue[$index];
+			$maxMinSpan = $this->maxMinSpan[$index];
+		
+		}
+		
+		if ($this->params["calculation-method"] == "absolute") {
+			
+			$a = round($value / $maxValue, 2);
+		
+		} else  {
+			
+			$currentSpan = $value - $minValue;
+			
+			$a = round($currentSpan / $maxMinSpan, 2);
+							
+		}
+		
 		return $r .','. $g .','. $b .','. $a;
 	}
 
