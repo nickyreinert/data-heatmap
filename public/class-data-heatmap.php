@@ -28,6 +28,7 @@
 
 		$this->params = shortcode_atts( array(
 			'source' => 'custom-field', // TODO: add as source: SQL-query, file from media library
+			'id' => 'data-heatmap',
 			'source-id' => 'data-heatmap',
 			'basecolor' => '#ff0000',
 			'fontSize' => 8,
@@ -68,7 +69,9 @@
 
 		$header = [];
 		$preparedData = [];
-
+		
+		$this->maxValue = 0;
+		
 		foreach ($data as $index => $row) {
 
 			if ($index == 0) {
@@ -129,7 +132,7 @@
 
 		$result = NULL;
 
-		$result = '<table class="data-heatmap" style="text-align: center;font-size: '.$this->params['fontSize'].'pt;">';
+		$result = '<table class="data-heatmap" id="'.$this->params['id'].'" style="text-align: center;font-size: '.$this->params['fontSize'].'pt;">';
 
 		if ($this->params['hide-xaxis'] == 'no') {
 
